@@ -1,0 +1,147 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: "1-0-1-k8s-us-east-1-pdi-fabiano-intelipost-com-br"
+  region: "us-east-1"
+  version: "1.22"
+vpc:
+  id: "vpc-0a724acb406f3b000"
+  cidr: "10.110.0.0/16"
+  subnets:
+    private:
+      us-east-1a:
+          id: "subnet-05dcde253beb6ffb4"
+          cidr: "10.110.128.0/20"
+      us-east-1b:
+          id: "subnet-0928de58dee6bf53a"
+          cidr: "10.110.144.0/20"
+    public:
+      us-east-1a:
+          id: "subnet-0019e284b97ddd631"
+          cidr: "10.110.0.0/20"
+      us-east-1b:
+          id: "subnet-04aa87a937505ee6a"
+          cidr: "10.110.16.0/20"
+
+cloudWatch:
+  clusterLogging:
+    enableTypes:
+      - "api"
+      - "audit"
+      - "authenticator"
+      - "controllerManager"
+      - "scheduler"
+spotOcean:
+  strategy:
+    spotPercentage: 100
+    utilizeReservedInstances: true
+    fallbackToOnDemand: true
+
+  scheduling:
+    shutdownHours:
+      isEnabled: true
+      timeWindows:
+      - Mon:03:00-Mon:11:00
+      - Tue:03:00-Tue:11:00
+      - Wed:03:00-Wed:11:00
+      - Thu:03:00-Thu:11:00
+      - Fri:03:00-Fri:11:00
+      - Sat:11:00-Sat:16:00
+      - Sun:11:00-Sun:16:00
+  autoScaler:
+    enabled: true
+    cooldown: 300
+    autoConfig: false
+    headrooms:
+      cpuPerUnit: 2
+      gpuPerUnit: 0
+      memoryPerUnit: 64
+      numOfUnits: 1
+
+  compute:
+    instanceTypes:
+      whitelist:
+      - m5a.large
+      - m5a.xlarge
+      - m5a.2xlarge
+      - m5a.4xlarge
+      - m5.large
+
+nodeGroups:
+  - name: "node-internal-v1"
+    spotOcean:
+     #strategy:
+      #spotPercentage: 100
+     autoScaler:
+      resourceLimits:
+        maxInstanceCount: 2
+    availabilityZones: ["us-east-1a", "us-east-1b"]
+    privateNetworking: true
+    iam:
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::512455082144:policy/platform-k8s-intelipost-us-east-1-dev-1-0-1-kube2iam-access
+      withAddonPolicies:
+        cloudWatch: true
+        ebs: true
+    securityGroups:
+      withShared: true
+      withLocal: true
+      attachIDs: ["sg-0a7dbafc0790a4d82"]
+    ssh:
+      allow: true
+      publicKeyPath: /app/providers/aws/intelipost/us-east-1/dev/k8s/files/ssh/suporte.pub
+    volumeSize: 20
+    volumeType: "gp3"
+    tags:
+      "CostCenter": "tecnologia"
+      "Team": "squad-foundation"
+      "Product": "eks"
+      "Platform": "aws"
+      "Application": "eks"
+      "Environment": "dev"
+      "k8s.io/cluster-autoscaler/enabled": "true"
+      "k8s.io/cluster-autoscaler/1-0-1-k8s-us-east-1-pdi-fabiano-intelipost-com-br": "owned"
+
+  - name: "node-service-v1"
+    spotOcean:
+     #strategy:
+      #spotPercentage: 100
+     autoScaler:
+      resourceLimits:
+        maxInstanceCount: 5
+    availabilityZones: ["us-east-1a", "us-east-1b"]
+    privateNetworking: true
+    labels:
+      node-service: "true"
+    taints:
+      node-service: "true:NoSchedule"
+    iam:
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::512455082144:policy/platform-k8s-intelipost-us-east-1-dev-1-0-1-kube2iam-access
+      withAddonPolicies:
+        cloudWatch: true
+        ebs: true
+    securityGroups:
+      withShared: true
+      withLocal: true
+      attachIDs: ["sg-0a7dbafc0790a4d82"]
+    ssh:
+      allow: true
+      publicKeyPath: /app/providers/aws/intelipost/us-east-1/dev/k8s/files/ssh/suporte.pub
+    volumeSize: 20
+    volumeType: "gp3"
+    tags:
+      "CostCenter": "tecnologia"
+      "Team": "squad-foundation"
+      "Product": "eks"
+      "Platform": "aws"
+      "Application": "eks"
+      "Environment": "dev"
+      "k8s.io/cluster-autoscaler/enabled": "true"
+      "k8s.io/cluster-autoscaler/1-0-1-k8s-us-east-1-pdi-fabiano-intelipost-com-br": "owned"
+      "k8s.io/cluster-autoscaler/1-0-1-k8s-us-east-1-pdi-fabiano-intelipost-com-br/taint/node-service": "true:NoSchedule"
+      "k8s.io/cluster-autoscaler/1-0-1-k8s-us-east-1-pdi-fabiano-intelipost-com-br/label/node-service": "true"
